@@ -10,7 +10,7 @@ export const signup = async (
     const { fullName, email, password, role, phone } = req.body;
 
     if (!fullName || !email || !password || !role || !phone) {
-      throw new Error("Signup failed");
+      throw new Error("Fullname, email, password, role, phone are required");
     }
 
     const newUser = await UserModel.create({
@@ -47,13 +47,28 @@ export const signup = async (
   }
 };
 
-export const signin = (req: Request, res: Response, next: NextFunction) => {
+export const signin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
-    console.log("res --------------------------------------------\n", req);
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      throw new Error("Email and password are required");
+    }
+
+    const existingUser = await UserModel.findOne({ email, password });
+
+    if (!existingUser) {
+      throw new Error("Invalid credentials");
+    }
 
     res.status(200).json({
       status: "success",
       message: "Signin successful",
+      data: existingUser,
     });
 
     return;
@@ -61,14 +76,12 @@ export const signin = (req: Request, res: Response, next: NextFunction) => {
     if (error instanceof Error) {
       res.status(500).json({
         status: "failed",
-        message: "Internal server error",
-        error: error.message,
+        message: error.message,
       });
     } else {
       res.status(500).json({
         status: "failed",
-        message: "An error occurred",
-        error: "An error occurred",
+        message: "Sign in failed",
       });
     }
   }
