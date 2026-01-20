@@ -8,7 +8,6 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: UserRole;
-  isEmailVerified: boolean;
   phone?: string; // optional field
 }
 
