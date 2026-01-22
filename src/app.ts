@@ -5,6 +5,7 @@ import morgan from "morgan";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import authRouter from "@/modules/auth/auth.routes";
+import productsRouter from "@/modules/products/products.routes";
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/products", productsRouter);
 
 // This would cause an error (unused variable)
 // const unusedVar = "test";
