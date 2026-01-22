@@ -12,9 +12,10 @@ export interface IProduct extends Document {
   stock: number;
   inStock: boolean;
   moq: number;
+  price: number; // Added price field
 }
 
-const productSchema = new Schema<IProduct>(
+const productSchema = new Schema(
   {
     name: {
       type: String,
@@ -22,13 +23,11 @@ const productSchema = new Schema<IProduct>(
       trim: true,
       minlength: [3, "Name must be at least 3 characters"],
     },
-
     description: {
       type: String,
       trim: true,
       required: [true, "Description is required"],
     },
-
     category: {
       type: String,
       required: [true, "Category is required"],
@@ -36,44 +35,42 @@ const productSchema = new Schema<IProduct>(
       lowercase: true,
       enum: ["grocery", "beauty"],
     },
-
     brand: {
       type: String,
       trim: true,
       required: [true, "Brand name is required"],
     },
-
     images: {
-      type: String, // array of image URLs
+      type: String,
       required: [true, "At least one product image is required"],
     },
-
     variants: [
       {
         type: String,
         trim: true,
       },
     ],
-
+    price: {
+      type: Number,
+      required: [true, "Price is required"],
+      min: [0, "Price cannot be negative"],
+    },
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
       default: "696fe283f0d40467fb2337ae",
     },
-
     stock: {
       type: Number,
       required: true,
       min: 0,
       default: 0,
     },
-
     inStock: {
       type: Boolean,
       default: false,
     },
-
     moq: {
       type: Number,
       required: true,
@@ -87,5 +84,4 @@ const productSchema = new Schema<IProduct>(
 );
 
 const Product = model<IProduct>("Product", productSchema);
-
 export default Product;
