@@ -8,34 +8,7 @@ import Order from "./orders.model";
 // @access  Private
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { user, orderItems, shippingAddress, paymentMethod, totalPrice } =
-      req.body;
-
-    // Validation
-    if (!orderItems || orderItems.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No order items provided",
-      });
-    }
-
-    if (!user || !shippingAddress || !paymentMethod) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing required fields",
-      });
-    }
-
-    const order = await Order.create({
-      user,
-      orderItems,
-      shippingAddress,
-      paymentMethod,
-      totalPrice,
-      status: "pending",
-      isPaid: false,
-      isDelivered: false,
-    });
+    const order = await Order.create(req.body.orderData);
 
     const populatedOrder = await Order.findById(order._id)
       .populate("user", "name email")
@@ -55,9 +28,6 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 };
 
-// @desc    Get all orders
-// @route   GET /api/v1/orders
-// @access  Private/Admin
 export const getAllOrders = async (req: Request, res: Response) => {
   try {
     const {
@@ -67,6 +37,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
       isPaid,
       isDelivered,
       userId,
+      search,
     } = req.query;
 
     // Build filter object
@@ -88,28 +59,39 @@ export const getAllOrders = async (req: Request, res: Response) => {
       filter.user = new mongoose.Types.ObjectId(userId as string);
     }
 
+    if (search) {
+      filter.$or = [
+        { orderId: { $regex: search, $options: "i" } },
+        { "shippingAddress.fullName": { $regex: search, $options: "i" } },
+        { "shippingAddress.phone": { $regex: search, $options: "i" } },
+      ];
+    }
+
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
     const skip = (pageNum - 1) * limitNum;
 
     const orders = await Order.find(filter)
-      .populate("user", "name email")
-      .populate("orderItems.product", "name price")
+      .populate("user", "fullName email phone")
+      .populate("orderItems.product", "name brand price images")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum);
 
     const total = await Order.countDocuments(filter);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      total,
-      page: pageNum,
-      pages: Math.ceil(total / limitNum),
       data: orders,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+      },
     });
   } catch (error: any) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error fetching orders",
       error: error.message,
@@ -196,10 +178,6 @@ export const updateOrderById = async (req: Request, res: Response) => {
       if (updateData.isDelivered && !order.deliveredAt) {
         order.deliveredAt = new Date();
       }
-    }
-
-    if (updateData.paymentResult) {
-      order.paymentResult = updateData.paymentResult;
     }
 
     if (updateData.shippingAddress) {

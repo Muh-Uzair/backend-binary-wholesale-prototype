@@ -2,27 +2,24 @@
 import { Document, model, Schema, Types } from "mongoose";
 
 export interface IOrder extends Document {
+  orderId: string;
   user: Types.ObjectId;
   orderItems: {
     product: Types.ObjectId;
-    name: string; // Product name at the time of order
+    name: string;
     qty: number;
-    price: number; // Price per unit at the time
-    image: string; // Main image URL
+    price: number;
+    image: string;
   }[];
   shippingAddress: {
     address: string;
     city: string;
-    postalCode: string;
     country: string;
+    fullName: string;
+    phone: string;
+    postalCode: string;
   };
   paymentMethod: string;
-  paymentResult?: {
-    id: string;
-    status: string;
-    update_time: string;
-    email_address: string;
-  };
   totalPrice: number;
   isPaid: boolean;
   paidAt?: Date;
@@ -33,6 +30,12 @@ export interface IOrder extends Document {
 
 const orderSchema = new Schema<IOrder>(
   {
+    orderId: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
     user: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -70,21 +73,16 @@ const orderSchema = new Schema<IOrder>(
     shippingAddress: {
       address: { type: String, required: true },
       city: { type: String, required: true },
-      postalCode: { type: String, required: true },
       country: { type: String, required: true },
+      fullName: { type: String, required: true },
+      phone: { type: String, required: true },
+      postalCode: { type: String, required: true },
     },
 
     paymentMethod: {
       type: String,
       required: true,
-      enum: ["cash", "card", "paypal", "stripe"], // Add more as needed
-    },
-
-    paymentResult: {
-      id: { type: String },
-      status: { type: String },
-      update_time: { type: String },
-      email_address: { type: String },
+      enum: ["cash", "card"],
     },
 
     totalPrice: {
